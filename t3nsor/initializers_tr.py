@@ -41,14 +41,17 @@ def _validate_input_parameters_tr(is_tensor, shape, **params):
     if 'batch_size' in params:
         batch_size = params['batch_size']
         if not isinstance(batch_size, (int, np.integer)):
-            raise ValueError('`batch_size` should be integer, got %f' % batch_size)
+            raise ValueError(
+                '`batch_size` should be integer, got %f' % batch_size)
         if batch_size < 1:
-            raise ValueError('Batch size should be positive, got %d' % batch_size)
+            raise ValueError(
+                'Batch size should be positive, got %d' % batch_size)
     if 'tr_rank' in params:
         tr_rank = params['tr_rank']
         if tr_rank.size == 1:
             if not isinstance(tr_rank[()], np.integer):
-                raise ValueError('`tr_rank` should be integer, got %f' % tr_rank[()])
+                raise ValueError(
+                    '`tr_rank` should be integer, got %f' % tr_rank[()])
         if tr_rank.size > 1:
             if not all(isinstance(tt_r, np.integer) for tt_r in tr_rank):
                 raise ValueError('all elements in `tr_rank` should be integers, got'
@@ -128,13 +131,13 @@ def matrix_zeros_tr(shape, rank=2, dtype=torch.float32):
 
     curr_core_shape = (1, shape[0][0], shape[1][0], rank)
     tr_cores[0] = torch.zeros(curr_core_shape, dtype=dtype)
-    
+
     for i in range(1, num_dims - 1):
         curr_core_shape = (rank, shape[0][i], shape[1][i], rank)
         tr_cores[i] = torch.zeros(curr_core_shape, dtype=dtype)
-        
+
     curr_core_shape = (rank, shape[0][num_dims - 1], shape[1][num_dims - 1], 1)
-    tr_cores[num_dims - 1] = torch.zeros(curr_core_shape, dtype=dtype)    
+    tr_cores[num_dims - 1] = torch.zeros(curr_core_shape, dtype=dtype)
 
     return TensorRing(tr_cores)
 
@@ -158,13 +161,14 @@ def eye_tr(shape, dtype=torch.float32):
     tr_cores = num_dims * [None]
     for i in range(num_dims):
         curr_core_shape = (1, int(shape[i]), int(shape[i]), 1)
-        tr_cores[i] = torch.eye_tr(shape[i], dtype=dtype).view(*curr_core_shape)
+        tr_cores[i] = torch.eye_tr(
+            shape[i], dtype=dtype).view(*curr_core_shape)
 
     return TensorRing(tr_cores)
 
 
 def matrix_with_random_cores_tr(shape, tr_rank=2, mean=0., stddev=1.,
-                             dtype=torch.float32):
+                                dtype=torch.float32):
     """Generate a TT-matrix of given shape with N(mean, stddev^2) cores.
     Args:
       shape: 2d array, shape[0] is the shape of the matrix row-index,
@@ -197,7 +201,8 @@ def matrix_with_random_cores_tr(shape, tr_rank=2, mean=0., stddev=1.,
         shape[1] = np.ones(len(shape[0]), dtype=int)
     shape = np.array(shape)
     tr_rank = np.array(tr_rank)
-    _validate_input_parameters_tr(is_tensor=False, shape=shape, tr_rank=tr_rank)
+    _validate_input_parameters_tr(
+        is_tensor=False, shape=shape, tr_rank=tr_rank)
 
     num_dims = shape[0].size
     if tr_rank.size == 1:
@@ -216,7 +221,7 @@ def matrix_with_random_cores_tr(shape, tr_rank=2, mean=0., stddev=1.,
 
 
 def random_matrix_tr(shape, tr_rank=2, mean=0., stddev=1.,
-                  dtype=torch.float32):
+                     dtype=torch.float32):
     """Generate a random TT-matrix of the given shape with given mean and stddev.
     Entries of the generated matrix (in the full format) will be iid and satisfy
     E[x_{i1i2..id}] = mean, Var[x_{i1i2..id}] = stddev^2, but the distribution is
@@ -256,7 +261,8 @@ def random_matrix_tr(shape, tr_rank=2, mean=0., stddev=1.,
     shape = np.array(shape)
     tr_rank = np.array(tr_rank)
 
-    _validate_input_parameters_tr(is_tensor=False, shape=shape, tr_rank=tr_rank)
+    _validate_input_parameters_tr(
+        is_tensor=False, shape=shape, tr_rank=tr_rank)
 
     num_dims = shape[0].size
     if tr_rank.size == 1:
@@ -274,15 +280,15 @@ def random_matrix_tr(shape, tr_rank=2, mean=0., stddev=1.,
     var = np.prod(tr_rank ** cr_exponent)
     core_stddev = stddev ** (1.0 / num_dims) * var
 
-    tt = matrix_with_random_cores_tr(shape, tr_rank=tr_rank, stddev=core_stddev, dtype=dtype)
+    tt = matrix_with_random_cores_tr(
+        shape, tr_rank=tr_rank, stddev=core_stddev, dtype=dtype)
 
     if np.abs(mean) < 1e-8:
         return tt
     else:
         raise NotImplementedError('non-zero mean is not supported yet')
 
-        
-        
+
 def glorot_initializer_tr(shape, tr_rank=2, dtype=torch.float32):
     shape = list(shape)
     # In case shape represents a vector, e.g. [None, [2, 2, 2]]
@@ -293,16 +299,16 @@ def glorot_initializer_tr(shape, tr_rank=2, dtype=torch.float32):
         shape[1] = np.ones(len(shape[0]), dtype=int)
     shape = np.array(shape)
     tr_rank = np.array(tr_rank)
-    _validate_input_parameters_tr(is_tensor=False, shape=shape, tr_rank=tr_rank)
+    _validate_input_parameters_tr(
+        is_tensor=False, shape=shape, tr_rank=tr_rank)
     n_in = np.prod(shape[0])
     n_out = np.prod(shape[1])
     lamb = 2.0 / (n_in + n_out)
-    return random_matrix_tr(shape, tr_rank=tr_rank, stddev=np.sqrt(lamb),dtype=dtype)
-
+    return random_matrix_tr(shape, tr_rank=tr_rank, stddev=np.sqrt(lamb), dtype=dtype)
 
 
 def matrix_batch_with_random_cores_tr(shape, batch_size=1, tr_rank=2, mean=0., stddev=1.,
-                             dtype=torch.float32):
+                                      dtype=torch.float32):
     """Generate a TT-matrix of given shape with N(mean, stddev^2) cores.
     Args:
       shape: 2d array, shape[0] is the shape of the matrix row-index,
@@ -335,7 +341,8 @@ def matrix_batch_with_random_cores_tr(shape, batch_size=1, tr_rank=2, mean=0., s
         shape[1] = np.ones(len(shape[0]), dtype=int)
     shape = np.array(shape)
     tr_rank = np.array(tr_rank)
-    _validate_input_parameters_tr(is_tensor=False, shape=shape, tr_rank=tr_rank, batch_size=batch_size)
+    _validate_input_parameters_tr(
+        is_tensor=False, shape=shape, tr_rank=tr_rank, batch_size=batch_size)
 
     num_dims = shape[0].size
     if tr_rank.size == 1:
@@ -354,7 +361,7 @@ def matrix_batch_with_random_cores_tr(shape, batch_size=1, tr_rank=2, mean=0., s
 
 
 def random_matrix_tr_batch_tr(shape, batch_size=1, tr_rank=2, mean=0., stddev=1.,
-                  dtype=torch.float32):
+                              dtype=torch.float32):
     """Generate a random TT-matrix of the given shape with given mean and stddev.
     Entries of the generated matrix (in the full format) will be iid and satisfy
     E[x_{i1i2..id}] = mean, Var[x_{i1i2..id}] = stddev^2, but the distribution is
@@ -394,7 +401,8 @@ def random_matrix_tr_batch_tr(shape, batch_size=1, tr_rank=2, mean=0., stddev=1.
     shape = np.array(shape)
     tr_rank = np.array(tr_rank)
 
-    _validate_input_parameters_tr(is_tensor=False, shape=shape, tr_rank=tr_rank, batch_size=batch_size)
+    _validate_input_parameters_tr(
+        is_tensor=False, shape=shape, tr_rank=tr_rank, batch_size=batch_size)
 
     num_dims = shape[0].size
     if tr_rank.size == 1:
@@ -412,7 +420,8 @@ def random_matrix_tr_batch_tr(shape, batch_size=1, tr_rank=2, mean=0., stddev=1.
     var = np.prod(tr_rank ** cr_exponent)
     core_stddev = stddev ** (1.0 / num_dims) * var
 
-    tt = matrix_batch_with_random_cores_tr(shape, batch_size=batch_size, tr_rank=tr_rank, stddev=core_stddev, dtype=dtype)
+    tt = matrix_batch_with_random_cores_tr(
+        shape, batch_size=batch_size, tr_rank=tr_rank, stddev=core_stddev, dtype=dtype)
 
     if np.abs(mean) < 1e-8:
         return tt

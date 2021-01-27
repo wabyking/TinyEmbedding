@@ -20,7 +20,8 @@ class TensorTrain(object):
         if self._is_tt_matrix:
             self._raw_shape = [[tt_core.shape[1] for tt_core in self._tt_cores],
                                [tt_core.shape[2] for tt_core in self._tt_cores]]
-            self._shape = [int(np.prod(self._raw_shape[0])), int(np.prod(self._raw_shape[1]))]
+            self._shape = [int(np.prod(self._raw_shape[0])),
+                           int(np.prod(self._raw_shape[1]))]
             self._ndims = len(self._raw_shape[0])
 
         else:
@@ -31,9 +32,9 @@ class TensorTrain(object):
         self._ranks = [tt_core.shape[0] for tt_core in self._tt_cores] + [1, ]
         self._is_parameter = False
         self._parameter = None
-        self._dof = np.sum([np.prod(list(tt_core.shape)) for tt_core in self._tt_cores])
+        self._dof = np.sum([np.prod(list(tt_core.shape))
+                            for tt_core in self._tt_cores])
         self._total = np.prod(self._shape)
-
 
     @property
     def tt_cores(self):
@@ -89,7 +90,6 @@ class TensorTrain(object):
     @property
     def total(self):
         return self._total
-
 
     def to(self, device):
         new_cores = []
@@ -164,11 +164,12 @@ class TensorTrain(object):
             return "A TT-Matrix of size %d x %d, underlying tensor" \
                    "shape: %s x %s, TT-ranks: %s " \
                    "\n on device '%s' with compression rate %.2f" % (shape[0], shape[1],
-                                           raw_shape[0], raw_shape[1],
-                                           tt_ranks, device, compression_rate)
+                                                                     raw_shape[0], raw_shape[1],
+                                                                     tt_ranks, device, compression_rate)
         else:
             return "A Tensor Train of shape %s, TT-ranks: %s" \
-                   "\n on device '%s' with compression rate %.2f" % (shape, tt_ranks, device, compression_rate)
+                   "\n on device '%s' with compression rate %.2f" % (
+                       shape, tt_ranks, device, compression_rate)
 
 
 class TensorTrainBatch():
@@ -196,7 +197,8 @@ class TensorTrainBatch():
 
         else:
             self._raw_shape = [tt_core.shape[2] for tt_core in self._tt_cores]
-            self._shape = [self._batch_size, ] + [tt_core.shape[2] for tt_core in self._tt_cores]
+            self._shape = [self._batch_size, ] + [tt_core.shape[2]
+                                                  for tt_core in self._tt_cores]
             self._ndims = len(self._raw_shape)
 
         self._ranks = [tt_core.shape[1] for tt_core in self._tt_cores] + [1, ]

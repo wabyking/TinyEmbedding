@@ -1,13 +1,13 @@
+from nltk.tokenize import word_tokenize
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
 np.random.seed(12345)
 
-from nltk.tokenize import word_tokenize
 
 def tokenlize(text):
-    text =text.lower()
+    text = text.lower()
     # print(" ".join(word_tokenize(text))) word_tokenize(text)
     return text.split()
 
@@ -45,7 +45,8 @@ class DataReader:
                         word_frequency[word] = word_frequency.get(word, 0) + 1
 
                         if self.token_count % 1000000 == 0:
-                            print("Read " + str(int(self.token_count / 1000000)) + "M words.")
+                            print(
+                                "Read " + str(int(self.token_count / 1000000)) + "M words.")
 
         wid = 0
         for w, c in word_frequency.items():
@@ -113,7 +114,7 @@ class Word2vecDataset(Dataset):
     def collate(batches):
         all_u = [u for batch in batches for u, _, _ in batch if len(batch) > 0]
         all_v = [v for batch in batches for _, v, _ in batch if len(batch) > 0]
-        all_neg_v = [neg_v for batch in batches for _, _, neg_v in batch if len(batch) > 0]
+        all_neg_v = [neg_v for batch in batches for _,
+                     _, neg_v in batch if len(batch) > 0]
 
         return torch.LongTensor(all_u), torch.LongTensor(all_v), torch.LongTensor(all_neg_v)
-

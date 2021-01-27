@@ -2,6 +2,7 @@ from t3nsor import TensorTrainBatch
 from t3nsor import TensorTrain
 import torch
 
+
 def gather_rows(tt_mat, inds):
     """
     inds -- list of indices of shape batch_size x d
@@ -28,9 +29,11 @@ def gather_rows(tt_mat, inds):
             curr_core = cur_slice.view(ranks[k], batch_size, -1)
             # r x B x Mr
             res = torch.einsum('oqb,bow->oqw', (res, curr_core))
-    res = torch.einsum('i...i->...', res.view(batch_size, ranks[0], res.shape[1] // ranks[0], -1, ranks[0]).transpose(0, 1))
+    res = torch.einsum('i...i->...', res.view(batch_size,
+                                              ranks[0], res.shape[1] // ranks[0], -1, ranks[0]).transpose(0, 1))
 
     return res
+
 
 def transpose(tt_matrix):
     cores = []
@@ -54,7 +57,7 @@ def tt_dense_matmul(tt_matrix_a, matrix_b):
     if a_columns is not None and b_rows is not None:
         if a_columns != b_rows:
             raise ValueError('Arguments shapes should align got %d and %d instead.' %
-                       (tt_matrix_a.shape, matrix_b.shape))
+                             (tt_matrix_a.shape, matrix_b.shape))
 
     a_shape = tt_matrix_a.shape
     a_raw_shape = tt_matrix_a.raw_shape
@@ -74,7 +77,8 @@ def tt_dense_matmul(tt_matrix_a, matrix_b):
         if core_idx > 0:
           # After reshape the shape of data becomes
           # (ik, ..., id-1, K, j0, ..., jk-2) x jk-1 x rank_k
-            new_data_shape = (-1, a_raw_shape[1][core_idx - 1], a_ranks[core_idx])
+            new_data_shape = (-1, a_raw_shape[1]
+                              [core_idx - 1], a_ranks[core_idx])
             data = data.contiguous().view(new_data_shape)
 
     # At the end the shape of the data is (i0, ..., id-1) x K
@@ -103,7 +107,8 @@ def dense_tt_matmul(matrix_a, tt_matrix_b):
         data = torch.tensordot(data, curr_core, dims=[[1, -1], [1, 0]])
 
     return data.view(a_shape[0], b_shape[1])
-  
+
+
 def naive_dense_tt_matmul(matrix_a, tt_matrix_b):
     ndims = tt_matrix_b.ndims
     a_columns = matrix_a.shape[1]
@@ -141,6 +146,7 @@ def naive_full(tt_a):
     full = full.reshape(tt_a.shape[0], tt_a.shape[1])
     return full
 
+
 def naive_dense_tr_matmul(matrix_a, tr_matrix_b):
     ndims = tr_matrix_b.ndims
     a_columns = matrix_a.shape[1]
@@ -162,4 +168,3 @@ def naive_dense_tr_matmul(matrix_a, tr_matrix_b):
     full = torch.einsum('abcd,defg,ghia->bcefhi', core0, core1, core2)
     res = torch.einsum('abcd,bqcsdx->aqsx', input, full)
     return res.contiguous().view(B, -1)
-

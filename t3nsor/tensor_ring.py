@@ -3,6 +3,7 @@ import numpy as np
 import torch.nn as nn
 import t3nsor as t3
 
+
 class TensorRing(object):
     def __init__(self, tr_cores, shape=None, tr_ranks=None, convert_to_tensors=True):
         #tr_cores = list(tr_cores)
@@ -20,7 +21,8 @@ class TensorRing(object):
         if self._is_tr_matrix:
             self._raw_shape = [[tr_core.shape[1] for tr_core in self._tr_cores],
                                [tr_core.shape[2] for tr_core in self._tr_cores]]
-            self._shape = [int(np.prod(self._raw_shape[0])), int(np.prod(self._raw_shape[1]))]
+            self._shape = [int(np.prod(self._raw_shape[0])),
+                           int(np.prod(self._raw_shape[1]))]
             self._ndims = len(self._raw_shape[0])
 
         else:
@@ -31,7 +33,8 @@ class TensorRing(object):
         self._ranks = [tr_core.shape[0] for tr_core in self._tr_cores] + [1, ]
         self._is_parameter = False
         self._parameter = None
-        self._dof = np.sum([np.prod(list(tr_core.shape)) for tr_core in self._tr_cores])
+        self._dof = np.sum([np.prod(list(tr_core.shape))
+                            for tr_core in self._tr_cores])
         self._total = np.prod(self._shape)
 
     @property
@@ -89,7 +92,6 @@ class TensorRing(object):
     def total(self):
         return self._total
 
-
     def full(self):
         num_dims = self._ndims
         ranks = self._ranks
@@ -102,7 +104,7 @@ class TensorRing(object):
 #             print('loop', core_idx, curr_core.shape)
             res = torch.tensordot(res, curr_core, dims=[[-1], [0]])
 
-        res = torch.einsum('i...i->...', res) # trace
+        res = torch.einsum('i...i->...', res)  # trace
 #         print(res.shape)
 
         if self.is_tr_matrix:

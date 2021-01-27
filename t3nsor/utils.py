@@ -6,7 +6,6 @@ from itertools import cycle, islice
 import torch
 
 
-
 MODES = ['ascending', 'descending', 'mixed']
 CRITERIONS = ['entropy', 'var']
 
@@ -56,7 +55,8 @@ def _get_all_factors(n, d=3, mode='ascending'):
             return tuple(_roundrobin(xf, xl))
 
     else:
-        raise ValueError('Wrong mode specified, only {} are available'.format(MODES))
+        raise ValueError(
+            'Wrong mode specified, only {} are available'.format(MODES))
 
     raw_factors = multiset_partitions(p, d)
     clean_factors = [prepr(f) for f in raw_factors]
@@ -75,7 +75,8 @@ def auto_shape(n, d=3, criterion='entropy', mode='ascending'):
     elif criterion == 'var':
         weights = [-np.var(f) for f in factors]
     else:
-        raise ValueError('Wrong criterion specified, only {} are available'.format(CRITERIONS))
+        raise ValueError(
+            'Wrong criterion specified, only {} are available'.format(CRITERIONS))
 
     i = np.argmax(weights)
     return list(factors[i])
@@ -87,28 +88,34 @@ def suggest_shape(n, d=3, criterion='entropy', mode='ascending'):
 
         n_i = _roundup(n, i)
         if criterion == 'entropy':
-            weights.append(entropy(auto_shape(n_i, d=d, mode=mode, criterion=criterion)))
+            weights.append(
+                entropy(auto_shape(n_i, d=d, mode=mode, criterion=criterion)))
         elif criterion == 'var':
-            weights.append(-np.var(auto_shape(n_i, d=d, mode=mode, criterion=criterion)))
+            weights.append(-np.var(auto_shape(n_i, d=d,
+                                              mode=mode, criterion=criterion)))
         else:
-            raise ValueError('Wrong criterion specified, only {} are available'.format(CRITERIONS))
+            raise ValueError(
+                'Wrong criterion specified, only {} are available'.format(CRITERIONS))
 
     i = np.argmax(weights)
-    factors = auto_shape(int(_roundup(n, i)), d=d, mode=mode, criterion=criterion)
+    factors = auto_shape(int(_roundup(n, i)), d=d,
+                         mode=mode, criterion=criterion)
     return factors
+
 
 def svd_fix(x):
     n = x.shape[0]
     m = x.shape[1]
-    
+
     if n > m:
         u, s, v = torch.svd(x)
-        
+
     else:
         u, s, v = torch.svd(x.t())
         v, u = u, v
-    
+
     return u, s, v
+
 
 def ind2sub(siz, idx):
     n = len(siz)

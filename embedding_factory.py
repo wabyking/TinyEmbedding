@@ -17,8 +17,6 @@ except:
     print("cannot install gpytorch because potroch version is lower than 1.7")
 
 
-
-
 class EarlyStopping(object):
     def __init__(self, mode='min', min_delta=0, patience=10, percentage=False):
         self.mode = mode
@@ -63,10 +61,10 @@ class EarlyStopping(object):
         else:
             if mode == 'min':
                 self.is_better = lambda a, best: a < best - (
-                            best * min_delta / 100)
+                    best * min_delta / 100)
             if mode == 'max':
                 self.is_better = lambda a, best: a > best + (
-                            best * min_delta / 100)
+                    best * min_delta / 100)
 
 
 class BaseEmbedding(nn.Embedding):
@@ -78,7 +76,7 @@ class BaseEmbedding(nn.Embedding):
 
     def initialize(self, embeddings, steps=1000):
         if type(embeddings) != torch.Tensor:
-            embeddings = torch.Tensor(embeddings) #.cuda
+            embeddings = torch.Tensor(embeddings)  # .cuda
         # print([p.size() for p in self.parameters()])
         optimizer = torch.optim.SGD(self.parameters(), lr=1.0)
         es = EarlyStopping(patience=6)
@@ -92,33 +90,39 @@ class BaseEmbedding(nn.Embedding):
                 break
             print("compressing word embeddings with loss {}".format(loss.item()))
             optimizer.step()
+
     def get_compressed_rate(self):
         return self.num_embeddings * self.embedding_dim / self.get_para_scale()
 
     def get_para_scale(self):
         raise NotImplementedError()
 
+
 class RowColEmbedding(BaseEmbedding):
-    def __init__(self, num_embeddings, embedding_dim, _weight=None, op = "plus",padding_idx=0,order =2): 
+    def __init__(self, num_embeddings, embedding_dim, _weight=None, op="plus", padding_idx=0, order=2):
      # how to processing padding, this is a problem in this case
      # try other order as well,
      # try rank and shuffle dimensions
         super(RowColEmbedding, self).__init__()
         self.num_embeddings_leaf = math.ceil((num_embeddings) ** (1 / order))
-        self.row_embedding = nn.Embedding(self.num_embeddings_leaf, embedding_dim)
-        self.col_embedding = nn.Embedding(self.num_embeddings_leaf, embedding_dim)
+        self.row_embedding = nn.Embedding(
+            self.num_embeddings_leaf, embedding_dim)
+        self.col_embedding = nn.Embedding(
+            self.num_embeddings_leaf, embedding_dim)
         self.op = op
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
         self.order = order
 
-    def forward(self,x):
-        row,col =  torch.div(x,self.num_embeddings_leaf) ,torch.remainder(x,self.num_embeddings_leaf)
+    def forward(self, x):
+        row, col = torch.div(x, self.num_embeddings_leaf), torch.remainder(
+            x, self.num_embeddings_leaf)
         # print(self.num_embeddings_leaf,row,col)
         if self.op == "plus":
             return self.row_embedding(row) + self.row_embedding(col)
         elif self.op == "mul":
             return self.row_embedding(row) * self.row_embedding(col)
+
     def get_para_scale(self):
         return self.num_embeddings_leaf * self.order * self.embedding_dim
 
@@ -141,8 +145,10 @@ class EmbeddingKet(BaseEmbedding):
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
         self.embedding_dim_leaf = math.ceil((embedding_dim) ** (1 / order))
-        logging.info('EmbeddingKet base num_embeddings: ' + str(self.num_embeddings))
-        logging.info('EmbeddingKet embedding_dim_leaf: ' + str(self.embedding_dim_leaf))
+        logging.info('EmbeddingKet base num_embeddings: ' +
+                     str(self.num_embeddings))
+        logging.info('EmbeddingKet embedding_dim_leaf: ' +
+                     str(self.embedding_dim_leaf))
         self.rank = rank
         if padding_idx is not None:
             if padding_idx > 0:
@@ -160,17 +166,17 @@ class EmbeddingKet(BaseEmbedding):
             self.weight_leafs = nn.Parameter(torch.Tensor(
                 # TODO:  During backward do we need all of these parameters to be loaded ? can we do better?
                 self.order, self.rank, self.num_embeddings, self.embedding_dim_leaf))
-            logging.info('EmbeddingKet weight_leafs shape: ' + str(self.weight_leafs.shape))
+            logging.info('EmbeddingKet weight_leafs shape: ' +
+                         str(self.weight_leafs.shape))
             self.reset_parameters()
         else:
             assert list(_weight.shape) == [self.order, self.rank, self.num_embeddings_leaf, self.embedding_dim_leaf], \
                 'Shape of weight does not match num_embeddings and embedding_dim'
             self.weight_leafs = nn.Parameter(_weight)
         self.sparse = sparse
+
     def get_para_scale(self):
         return self.order*self.rank*self.num_embeddings*self.embedding_dim_leaf
-
-
 
     def reset_parameters(self):
         torch.nn.init.xavier_uniform_(self.weight_leafs)
@@ -284,8 +290,10 @@ class EmbeddingKetXS(BaseEmbedding):
         self.embedding_dim = embedding_dim
         self.num_embeddings_leaf = math.ceil((num_embeddings) ** (1 / order))
         self.embedding_dim_leaf = math.ceil((embedding_dim) ** (1 / order))
-        logging.info('EmbeddingKetXS num_embeddings_leaf: ' + str(self.num_embeddings_leaf))
-        logging.info('EmbeddingKetXS embedding_dim_leaf: ' + str(self.embedding_dim_leaf))
+        logging.info('EmbeddingKetXS num_embeddings_leaf: ' +
+                     str(self.num_embeddings_leaf))
+        logging.info('EmbeddingKetXS embedding_dim_leaf: ' +
+                     str(self.embedding_dim_leaf))
         self.rank = rank
         if padding_idx is not None:
             if padding_idx > 0:
@@ -302,7 +310,8 @@ class EmbeddingKetXS(BaseEmbedding):
             # Creating Leaf Weights for Kronecker product
             self.weight_leafs = nn.Parameter(torch.Tensor(
                 self.order, self.rank, self.num_embeddings_leaf, self.embedding_dim_leaf))
-            logging.info('EmbeddingKetXS weight_leafs shape: ' + str(self.weight_leafs.shape))
+            logging.info('EmbeddingKetXS weight_leafs shape: ' +
+                         str(self.weight_leafs.shape))
             self.reset_parameters()
         else:
             assert list(_weight.shape) == [self.order, self.rank, self.num_embeddings_leaf, self.embedding_dim_leaf], \
@@ -313,9 +322,6 @@ class EmbeddingKetXS(BaseEmbedding):
 
     def get_para_scale(self):
         return self.order*self.rank*self.num_embeddings_leaf*self.embedding_dim_leaf
-
-
-
 
     def reset_parameters(self):
         # torch.nn.init.xavier_uniform_(self.weight_leafs)
@@ -328,7 +334,8 @@ class EmbeddingKetXS(BaseEmbedding):
         w = self.weight_leafs
         weight_leafs_product = w[0]
         for i in range(1, self.order):
-            weight_leafs_product = self.knocker_product(weight_leafs_product, w[i])
+            weight_leafs_product = self.knocker_product(
+                weight_leafs_product, w[i])
 
         weight = weight_leafs_product.sum(dim=0)
         weight = weight[:self.num_embeddings, :self.embedding_dim]
@@ -346,11 +353,11 @@ class EmbeddingKetXS(BaseEmbedding):
             logging.debug('self.weight.shape: ' + str(self.weight.shape))
             if input.dim() == 1:  #
                 return self.weight[input].base_lazy_tensor.evaluate().sum(dim=-3)[:,
-                       :self.embedding_dim]  # https://github.com/cornellius-gp/gpytorch/pull/871
+                                                                                  :self.embedding_dim]  # https://github.com/cornellius-gp/gpytorch/pull/871
             elif input.dim() == 2:
                 input_1d = input.contiguous().view(1, -1)
                 result = self.weight[input_1d[0]].base_lazy_tensor.evaluate().sum(dim=-3)[:,
-                         :self.embedding_dim]  # TODO: Not sure if this selection (self.embedding_dim) is correct in here. # https://github.com/cornellius-gp/gpytorch/pull/871
+                                                                                          :self.embedding_dim]  # TODO: Not sure if this selection (self.embedding_dim) is correct in here. # https://github.com/cornellius-gp/gpytorch/pull/871
                 return result.view(input.shape[0], input.shape[1], -1)
             else:
                 raise Exception('This input dimesion is not yet implemented')
@@ -390,9 +397,11 @@ class EmbeddingKetXS(BaseEmbedding):
         embedding.weight.requires_grad = not freeze
         return embedding
 
-INPUT_DIM,EMBEDDING_DIM = 30522,768
 
-def getTTEmbedding(INPUT_DIM,EMBEDDING_DIM,embedding_type = "tt",d=3,rank = 8,padding_idx = 0): # tr
+INPUT_DIM, EMBEDDING_DIM = 30522, 768
+
+
+def getTTEmbedding(INPUT_DIM, EMBEDDING_DIM, embedding_type="tt", d=3, rank=8, padding_idx=0):  # tr
     import t3nsor as t3
     if embedding_type == "tt":
         embed_model = t3.TTEmbedding(
@@ -419,7 +428,8 @@ def getTTEmbedding(INPUT_DIM,EMBEDDING_DIM,embedding_type = "tt",d=3,rank = 8,pa
     print(compression_rate)
     return embed_model
 
-def get_embedding(INPUT_DIM,EMBEDDING_DIM,embedding_type = "tt",d=3,rank = 8,padding_idx = 0, order=2):
+
+def get_embedding(INPUT_DIM, EMBEDDING_DIM, embedding_type="tt", d=3, rank=8, padding_idx=0, order=2):
     import t3nsor as t3
     if embedding_type == "tt":
         embed_model = t3.TTEmbedding(
@@ -444,29 +454,35 @@ def get_embedding(INPUT_DIM,EMBEDDING_DIM,embedding_type = "tt",d=3,rank = 8,pad
         )
         compression_rate = INPUT_DIM * EMBEDDING_DIM / embed_model.tr_matrix.dof
     elif embedding_type == "ket":
-        embed_model = EmbeddingKet(30522, 768, rank=rank, order=order,padding_idx=padding_idx)
+        embed_model = EmbeddingKet(
+            30522, 768, rank=rank, order=order, padding_idx=padding_idx)
         compression_rate = embed_model.get_compressed_rate()
     elif embedding_type == "ketxs":
-        embed_model = EmbeddingKetXS(30522, 768, rank=rank, order=order,padding_idx=padding_idx)
+        embed_model = EmbeddingKetXS(
+            30522, 768, rank=rank, order=order, padding_idx=padding_idx)
         compression_rate = embed_model.get_compressed_rate()
     elif embedding_type == "row_col_plus":
-        embed_model = RowColEmbedding(30522, 768,op="plus",padding_idx=padding_idx)
+        embed_model = RowColEmbedding(
+            30522, 768, op="plus", padding_idx=padding_idx)
         compression_rate = embed_model.get_compressed_rate()
     elif embedding_type == "row_col_mul":
-        embed_model = RowColEmbedding(30522, 768,op="mul",padding_idx=padding_idx)
+        embed_model = RowColEmbedding(
+            30522, 768, op="mul", padding_idx=padding_idx)
         compression_rate = embed_model.get_compressed_rate()
     else:
-        embed_model = nn.Embedding(30522, 768,padding_idx=padding_idx)
-        compression_rate =1
-        
+        embed_model = nn.Embedding(30522, 768, padding_idx=padding_idx)
+        compression_rate = 1
+
     print(compression_rate)
     return embed_model
 
 
-def test_time(embebding_layer,order, rank):
+def test_time(embebding_layer, order, rank):
     model = embebding_layer(30522, 768, rank=rank, order=order)  # XS
-    scaled = sum([reduce(lambda x, y: x * y, i.size()) for i in model.parameters()])
-    print("ori: {} : {}  with compression rate {}".format(30522 * 768, scaled, 30522 * 768 / scaled))
+    scaled = sum([reduce(lambda x, y: x * y, i.size())
+                  for i in model.parameters()])
+    print("ori: {} : {}  with compression rate {}".format(
+        30522 * 768, scaled, 30522 * 768 / scaled))
     # print(model.summary())
     # embeddings = super(nn.Embedding, self).__init__()
     # embeddings = np.random.rand(30522,768)
@@ -490,23 +506,22 @@ def test_time(embebding_layer,order, rank):
         print("time consumed {}".format(end))
     return end
 
+
 def test_time():
     import numpy as np
-    for embebding_layer in [EmbeddingKet,EmbeddingKetXS]:
-        for order in [2,4,8]:
-            for rank in range(1,10,1):
-                print(embebding_layer,order, rank)
-                test_time(embebding_layer,order,rank)
+    for embebding_layer in [EmbeddingKet, EmbeddingKetXS]:
+        for order in [2, 4, 8]:
+            for rank in range(1, 10, 1):
+                print(embebding_layer, order, rank)
+                test_time(embebding_layer, order, rank)
+
 
 if __name__ == "__main__":
     # main()
-    for embedding_type in ["tr","tt","ket","ketxs", "row_col_plus","row_col_mul"]:
-        a = get_embedding(30522,768,embedding_type=embedding_type)
+    for embedding_type in ["tr", "tt", "ket", "ketxs", "row_col_plus", "row_col_mul"]:
+        a = get_embedding(30522, 768, embedding_type=embedding_type)
         # print(a)
         # print(a.get_weights().shape)
-        x = torch.LongTensor(10,10)
-        x[:,:]=200 # zeor is for padding
+        x = torch.LongTensor(10, 10)
+        x[:, :] = 200  # zeor is for padding
         print(a(x).shape)
-
-
-

@@ -1,3 +1,11 @@
+'''
+Author: your name
+Date: 2021-01-27 10:31:21
+LastEditTime: 2021-01-27 14:52:25
+LastEditors: your name
+Description: In User Settings Edit
+FilePath: /TinyEmbedding/t3nsor/decompositions.py
+'''
 import numpy as np
 import torch
 
@@ -72,7 +80,8 @@ def to_tt_matrix(mat, shape, max_tt_rank=10, epsilon=None):
         curr_core = tt_tens.tt_cores[core_idx]
         curr_rank = tt_ranks[core_idx]
         next_rank = tt_ranks[core_idx + 1]
-        curr_core_new_shape = (curr_rank, shape[0, core_idx], shape[1, core_idx], next_rank)
+        curr_core_new_shape = (
+            curr_rank, shape[0, core_idx], shape[1, core_idx], next_rank)
         curr_core = curr_core.view(*curr_core_new_shape)
         tt_cores.append(curr_core)
     return TensorTrain(tt_cores, convert_to_tensors=False)

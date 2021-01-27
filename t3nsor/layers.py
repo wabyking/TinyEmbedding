@@ -4,6 +4,7 @@ import torch.nn as nn
 import t3nsor as t3
 import math
 
+
 class EarlyStopping(object):
     def __init__(self, mode='min', min_delta=0, patience=10, percentage=False):
         self.mode = mode
@@ -48,11 +49,10 @@ class EarlyStopping(object):
         else:
             if mode == 'min':
                 self.is_better = lambda a, best: a < best - (
-                            best * min_delta / 100)
+                    best * min_delta / 100)
             if mode == 'max':
                 self.is_better = lambda a, best: a > best + (
-                            best * min_delta / 100)
-
+                    best * min_delta / 100)
 
 
 class TTEmbedding(nn.Module):
@@ -92,7 +92,6 @@ class TTEmbedding(nn.Module):
         else:
             self.shape = init.raw_shape
 
-
         if init is None:
             init = t3.glorot_initializer(self.shape, tt_rank=tt_rank)
 
@@ -112,7 +111,7 @@ class TTEmbedding(nn.Module):
         self.padding_idx = padding_idx
         self.naive = naive
 
-    def get_weights(self): # why twice
+    def get_weights(self):  # why twice
         # waby write, just for a try
         if self.naive:
             self.full = t3.naive_full(self.tt_matrix)
@@ -137,14 +136,16 @@ class TTEmbedding(nn.Module):
         rows = self.full[x]
 
         if self.padding_idx is not None:
-            rows = torch.where(x.view(-1, 1) != self.padding_idx, rows, torch.zeros_like(rows))
+            rows = torch.where(x.view(-1, 1) != self.padding_idx,
+                               rows, torch.zeros_like(rows))
 
         rows = rows.view(*xshape_new)
 
         return rows.to(x.device)
+
     def initialize(self, embeddings, steps=1000):
         if type(embeddings) != torch.Tensor:
-            embeddings = torch.Tensor(embeddings) #.cuda
+            embeddings = torch.Tensor(embeddings)  # .cuda
         # print([p.size() for p in self.parameters()])
         optimizer = torch.optim.SGD(self.parameters(), lr=1.0)
         es = EarlyStopping(patience=6)
@@ -158,6 +159,7 @@ class TTEmbedding(nn.Module):
                 break
             print("compressing word embeddings with loss {}".format(loss.item()))
             optimizer.step()
+
 
 class TREmbedding(nn.Module):
     def __init__(self,
@@ -196,7 +198,6 @@ class TREmbedding(nn.Module):
                                  ' please specify shape')
         else:
             self.shape = init.raw_shape
-
 
         if init is None:
             init = t3.glorot_initializer_tr(self.shape, tr_rank=tt_rank)
@@ -243,7 +244,8 @@ class TREmbedding(nn.Module):
         rows = self.full[x]
 
         if self.padding_idx is not None:
-            rows = torch.where(x.view(-1, 1) != self.padding_idx, rows, torch.zeros_like(rows))
+            rows = torch.where(x.view(-1, 1) != self.padding_idx,
+                               rows, torch.zeros_like(rows))
 
         rows = rows.view(*xshape_new)
 
@@ -251,7 +253,7 @@ class TREmbedding(nn.Module):
 
     def initialize(self, embeddings, steps=1000):
         if type(embeddings) != torch.Tensor:
-            embeddings = torch.Tensor(embeddings) #.cuda
+            embeddings = torch.Tensor(embeddings)  # .cuda
         # print([p.size() for p in self.parameters()])
         optimizer = torch.optim.SGD(self.parameters(), lr=1.0)
         es = EarlyStopping(patience=6)
@@ -265,7 +267,6 @@ class TREmbedding(nn.Module):
                 break
             print("compressing word embeddings with loss {}".format(loss.item()))
             optimizer.step()
-
 
 
 class TTLinear(nn.Module):
